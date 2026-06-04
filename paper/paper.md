@@ -10,7 +10,7 @@ tags:
   - hyperparameter search
 authors:
   - name: Yichong Bai
-    orcid: 0000-0000-0000-0000
+    orcid: 0009-0007-0835-0135
     affiliation: 1
 affiliations:
   - name: Bai Capital
