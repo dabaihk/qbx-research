@@ -411,10 +411,21 @@ moves.
 
 ```bash
 pip install -e ".[dev]"
-pytest          # 34 tests
+pytest          # 43 tests
 ruff check .    # lint
 python examples/quickstart.py
 ```
+
+## Contributing & support
+
+Contributions are welcome. Please see [`CONTRIBUTING.md`](CONTRIBUTING.md) for
+how to set up a dev environment, run the tests, and open a pull request, and the
+[`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) for community expectations.
+
+- **Found a bug or have a feature request?** Open an issue:
+  <https://github.com/dabaihk/qbx-research/issues>
+- **Have a question or need help?** Open a [GitHub
+  Discussion](https://github.com/dabaihk/qbx-research/discussions) or an issue.
 
 ## References
 
