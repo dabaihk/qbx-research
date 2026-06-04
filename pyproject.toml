@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "qbx-research"
-version = "0.1.0"
+version = "0.1.1"
 description = "Parameter sweeps and selection-aware backtest statistics (Deflated Sharpe, PBO)."
 readme = "README.md"
 license = "Apache-2.0"
