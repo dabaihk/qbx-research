@@ -1,6 +1,6 @@
 ---
 title: "Selection-Aware Backtest Statistics: A Dependency-Light Reference Implementation of the Deflated Sharpe Ratio and the Probability of Backtest Overfitting"
-author: "Yichong Bai (Bai Capital)"
+author: "Yichong Bai"
 date: "June 2026"
 abstract: |
   Searching across many candidate strategies and reporting the performance of
@@ -242,6 +242,16 @@ are too thin.
 PyPI (`pip install qbx-research`) and on GitHub at
 <https://github.com/dabaihk/qbx-research>. It targets Python 3.10+ and depends
 only on NumPy and pandas (with PyYAML as an optional extra for YAML configs).
+
+# Declaration of generative AI and AI-assisted technologies in the writing process
+
+During the preparation of this work the author used Anthropic's Claude (via the
+Claude Code assistant) to draft and to improve the language and readability of
+the manuscript, and to assist with the implementation and validation of the
+accompanying software. The research question, the software design, and the
+conclusions are the author's own. After using these tools, the author reviewed
+and edited the content as needed and takes full responsibility for the content
+of the publication.
 
 # References
 

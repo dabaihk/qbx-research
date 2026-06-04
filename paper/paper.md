@@ -113,4 +113,17 @@ rather than the exception.
 The selection-metric methodology follows the work of Bailey and López de Prado
 on the Deflated Sharpe Ratio and the Probability of Backtest Overfitting.
 
+# AI usage disclosure
+
+In accordance with JOSS policy, the use of generative AI in this submission is
+disclosed here. The author used Anthropic's Claude (via the Claude Code
+command-line assistant) to assist with software implementation (code generation,
+refactoring, and test scaffolding), with documentation, and with drafting the
+text of this paper. The author conceived the project, made all architectural and
+design decisions, and independently validated all outputs — including the
+numerical agreement (to within $10^{-9}$) between the selection-metric
+implementations and an independent reference implementation, and the correctness
+of the cited references. All AI-assisted code and text were reviewed, edited, and
+verified by the author, who takes full responsibility for the content.
+
 # References
