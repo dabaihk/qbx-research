@@ -14,3 +14,6 @@ venv/
 .mypy_cache/
 .coverage
 htmlcov/
+
+# Never commit PyPI credentials
+.pypirc
