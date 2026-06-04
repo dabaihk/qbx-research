@@ -4,7 +4,7 @@
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
-![Tests](https://img.shields.io/badge/tests-34_passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-43_passing-brightgreen)
 [![Live Demo](https://img.shields.io/badge/live_demo-qbxwin.com-purple)](https://qbxwin.com)
 
 *An excerpt from our proprietary trading firm's research infrastructure. See part of the wider platform live at **[qbxwin.com](https://qbxwin.com)**.*
@@ -28,11 +28,11 @@ The mechanism is not subtle. If you try $N$ independent strategies that all have
 *zero* true skill, the expected best Sharpe you will observe is not zero — it
 grows without bound in $N$:
 
-$$
+```math
 \mathbb{E}\!\left[\max_{i \le N} \widehat{SR}_i\right] \;\approx\;
 \sigma_{SR}\left[(1-\gamma)\,\Phi^{-1}\!\left(1 - \tfrac{1}{N}\right)
 + \gamma\,\Phi^{-1}\!\left(1 - \tfrac{1}{N e}\right)\right]
-$$
+```
 
 where $\sigma_{SR}$ is the spread of Sharpe across trials, $\Phi^{-1}$ is the
 inverse standard normal, and $\gamma \approx 0.5772$ is the Euler–Mascheroni
@@ -200,18 +200,18 @@ and $\hat\gamma_4$ are the sample skewness and kurtosis of the returns.
 
 ### 1. The Sharpe ratio is an *estimate*, with error bars
 
-$$
+```math
 \widehat{SR} = \frac{\mu}{\sigma}
-$$
+```
 
 A point Sharpe hides its own uncertainty. For non-normal returns its standard
 error is (Lo 2002; Mertens 2002):
 
-$$
+```math
 \sigma_{\widehat{SR}} =
 \sqrt{\frac{1 - \hat\gamma_3\,\widehat{SR}
 + \frac{\hat\gamma_4 - 1}{4}\,\widehat{SR}^{\,2}}{\,n - 1\,}}
-$$
+```
 
 Negative skew and fat tails *inflate* this error — which is exactly the return
 profile of most strategies that sell insurance. A Sharpe with no error bar is a
@@ -222,14 +222,14 @@ headline with no story.
 The **PSR** is the probability that the *true* Sharpe exceeds a benchmark
 $SR^\ast$, given the sample's length and shape:
 
-$$
+```math
 \widehat{PSR}(SR^\ast) =
 \Phi\!\left(
 \frac{\left(\widehat{SR} - SR^\ast\right)\sqrt{\,n - 1\,}}
 {\sqrt{\,1 - \hat\gamma_3\,\widehat{SR}
 + \frac{\hat\gamma_4 - 1}{4}\,\widehat{SR}^{\,2}\,}}
 \right)
-$$
+```
 
 More data, higher excess Sharpe, and better-behaved tails all push PSR toward 1.
 It converts "my Sharpe is 1.5" into "I am 88% confident my Sharpe beats 0.5."
@@ -240,12 +240,12 @@ Here is the crux. When you keep the best of $N$ trials, the honest benchmark is
 **not** zero — it is the largest Sharpe you would expect from $N$ skill-less
 trials. Using the order statistics of the normal distribution:
 
-$$
+```math
 SR_0 = \overline{SR} + \sigma_{SR}
 \left[(1 - \gamma)\,\Phi^{-1}\!\left(1 - \tfrac{1}{N}\right)
 + \gamma\,\Phi^{-1}\!\left(1 - \tfrac{1}{N e}\right)\right],
 \qquad \gamma \approx 0.5772
-$$
+```
 
 where $\sigma_{SR}$ is the dispersion of Sharpe *across your candidates* and
 $\overline{SR}$ is their mean (taken as $0$ under the strict null). $SR_0$ rises
@@ -256,14 +256,14 @@ the bar.
 
 The **DSR** is simply the PSR measured against that selection-aware benchmark:
 
-$$
+```math
 \boxed{\;\widehat{DSR} = \widehat{PSR}(SR_0)
 = \Phi\!\left(
 \frac{\left(\widehat{SR} - SR_0\right)\sqrt{\,n - 1\,}}
 {\sqrt{\,1 - \hat\gamma_3\,\widehat{SR}
 + \frac{\hat\gamma_4 - 1}{4}\,\widehat{SR}^{\,2}\,}}
 \right)\;}
-$$
+```
 
 Read it as: **the probability the strategy has genuine skill, after accounting
 for the fact that you went looking for it.** A DSR of 0.95 is the usual
@@ -280,16 +280,16 @@ look good out-of-sample?
 For each split $c$, take the IS winner, find its relative rank $\omega_c \in
 (0,1)$ among all candidates **out-of-sample**, and form its logit:
 
-$$
+```math
 \lambda_c = \ln\!\frac{\omega_c}{1 - \omega_c}
-$$
+```
 
 A winner that overfits lands below the OOS median ($\omega_c < 0.5$, so
 $\lambda_c < 0$). PBO is the share of splits where that happens:
 
-$$
+```math
 \mathrm{PBO} = \frac{1}{|C|}\sum_{c \in C} \mathbf{1}\!\left[\lambda_c < 0\right]
-$$
+```
 
 $\mathrm{PBO} \approx 0.5$ means your selection has **no** out-of-sample value —
 the in-sample best is a coin flip out of sample. Low PBO means the winner tends
@@ -303,9 +303,9 @@ Two corrections keep the inputs honest:
 **Effective number of trials.** Correlated candidates are not independent bets.
 From the eigenvalues $\lambda_i$ of the candidate correlation matrix:
 
-$$
+```math
 N_\text{eff} = \frac{\left(\sum_i \lambda_i\right)^2}{\sum_i \lambda_i^2}
-$$
+```
 
 A participation ratio: 100 near-identical sweeps count as a handful of real
 trials, not 100.
@@ -313,10 +313,10 @@ trials, not 100.
 **Effective sample size.** Autocorrelated returns carry less information than
 their length suggests. With autocorrelations $\rho_k$:
 
-$$
+```math
 n_\text{eff} = \frac{n}{1 + 2\sum_{k=1}^{K} \rho_k^{+}},
 \qquad \rho_k^{+} = \max(0, \rho_k)
-$$
+```
 
 Both feed the formulas above, so neither a redundant grid nor sticky returns can
 smuggle in false confidence.
