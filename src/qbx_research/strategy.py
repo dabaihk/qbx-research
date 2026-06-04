@@ -23,6 +23,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from .backtest import BacktestPolicy, simulate
+from .config import RunConfig
 from .objective import Objective, rank
 from .search import Candidate, sweep
 from .selection import (
@@ -34,7 +36,14 @@ from .selection import (
 )
 from .space import SearchSpace
 
-__all__ = ["Strategy", "StrategyReport", "EvaluatedCandidate", "evaluate", "basic_metrics"]
+__all__ = [
+    "Strategy",
+    "SignalStrategy",
+    "StrategyReport",
+    "EvaluatedCandidate",
+    "evaluate",
+    "basic_metrics",
+]
 
 
 class Strategy(ABC):
@@ -65,6 +74,33 @@ class Strategy(ABC):
 
     def label(self) -> str:
         return self.name or type(self).__name__
+
+
+class SignalStrategy(Strategy):
+    """A strategy expressed as target positions over a price series.
+
+    Implement :attr:`space` and :meth:`positions`; the ``backtest`` is provided
+    for you by running those positions through :func:`qbx_research.backtest.simulate`
+    under :attr:`policy`. This is the common case — define the signal, let the
+    configurable :class:`~qbx_research.backtest.BacktestPolicy` own the execution
+    assumptions (costs, fill timing, shorting).
+    """
+
+    #: Price series the positions trade against. Set this in ``__init__``.
+    prices: pd.Series
+    #: Execution policy; defaults to ``BacktestPolicy()`` if left unset.
+    policy: BacktestPolicy = BacktestPolicy()
+
+    @abstractmethod
+    def positions(self, params: Mapping[str, Any]) -> pd.Series:
+        """Target position per period for one parameter assignment.
+
+        Signed: ``+1`` fully long, ``-1`` fully short. The policy clips for
+        ``allow_short``/``max_leverage`` and applies costs and fill timing.
+        """
+
+    def backtest(self, params: Mapping[str, Any]) -> pd.Series:
+        return simulate(self.prices, self.positions(params), policy=self.policy).returns
 
 
 @dataclass(frozen=True)
@@ -138,25 +174,34 @@ def basic_metrics(returns: Sequence[float] | pd.Series) -> dict[str, float]:
 def evaluate(
     strategy: Strategy,
     *,
+    config: RunConfig | None = None,
     objective: Objective | None = None,
-    method: str = "grid",
+    method: str | None = None,
     budget: int | None = None,
-    seed: int = 0,
-    constraints: Sequence[str] = (),
-    pbo_folds: int = 8,
+    seed: int | None = None,
+    constraints: Sequence[str] | None = None,
+    pbo_folds: int | None = None,
     n_trials: float | None = None,
 ) -> StrategyReport:
     """Run the full search → rank → deflate loop over ``strategy``.
 
-    Parameters mirror :func:`~qbx_research.search.sweep` for the search phase,
-    plus an :class:`~qbx_research.objective.Objective` (default: maximise
-    Sharpe) and the CSCV fold count for the overfitting estimate.
+    The run is described by a :class:`~qbx_research.config.RunConfig` (loadable
+    from YAML); any explicit keyword argument overrides the corresponding config
+    field, so ``evaluate(strategy)`` and ``evaluate(strategy, method="random")``
+    both work without constructing a config.
 
     Selection statistics that cannot be computed for the produced matrix are
     returned as ``None`` rather than raising, so a sweep of any size yields a
     usable report.
     """
-    objective = objective or Objective.maximize("sharpe")
+    config = config or RunConfig()
+    method = config.method if method is None else method
+    budget = config.budget if budget is None else budget
+    seed = config.seed if seed is None else seed
+    constraints = config.constraints if constraints is None else constraints
+    pbo_folds = config.pbo_folds if pbo_folds is None else pbo_folds
+    objective = objective or config.objective()
+
     candidates = sweep(
         strategy.space, method=method, budget=budget, seed=seed, constraints=constraints
     )

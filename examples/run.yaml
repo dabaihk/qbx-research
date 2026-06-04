@@ -1,0 +1,15 @@
+# Evaluation run config — everything except the strategy itself.
+# Load with: qbx_research.RunConfig.from_yaml("examples/run.yaml")
+
+method: grid                 # grid | random | latin_hypercube
+budget: null                 # candidate cap (sample count for random / lhs)
+seed: 7                      # seed for stochastic sampling
+constraints:                 # parameter-relation expressions
+  - "fast < slow"
+objective_metric: sharpe     # primary ranking metric
+objective_direction: maximize
+metric_constraints:          # hard gates on backtest metrics: [metric, op, value]
+  - ["max_drawdown_pct", "<=", 0.25]
+tie_breakers:                # secondary goals: [metric, direction]
+  - ["max_drawdown_pct", "minimize"]
+pbo_folds: 8                 # CSCV folds for the overfitting estimate

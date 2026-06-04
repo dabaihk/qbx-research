@@ -1,36 +1,42 @@
 # Copyright 2026 The qbx-research Authors.
 # SPDX-License-Identifier: Apache-2.0
-"""End-to-end demo: define a strategy, sweep it, then deflate the winner.
+"""End-to-end demo: define a strategy, configure it, sweep, then deflate.
 
 Run it:
 
     python examples/quickstart.py
 
-The strategy here is a textbook moving-average crossover on a synthetic price
-path — deliberately trivial, so the focus stays on the qbx-research workflow
-rather than on any real alpha. To research your own strategy, subclass
-``qbx_research.Strategy`` and implement ``space`` and ``backtest``; nothing else
-changes.
+The strategy is a textbook moving-average crossover on a synthetic price path —
+deliberately trivial, so the focus stays on the qbx-research workflow. Both the
+backtest policy (costs, fill, shorting) and the run config (search method,
+objective, constraints) are loaded from YAML next to this file. To research your
+own strategy, subclass ``qbx_research.SignalStrategy`` and implement ``space``
+and ``positions``.
 """
 from __future__ import annotations
 
-from qbx_research import Objective, evaluate
+from pathlib import Path
+
+from qbx_research import BacktestPolicy, RunConfig, evaluate
 from qbx_research.demos import MovingAverageCrossover
+
+HERE = Path(__file__).parent
 
 
 def main() -> None:
-    strategy = MovingAverageCrossover(seed=20260604)
+    policy = BacktestPolicy.from_yaml(HERE / "policy.yaml")
+    config = RunConfig.from_yaml(HERE / "run.yaml")
+
+    strategy = MovingAverageCrossover(seed=20260604, policy=policy)
     print(f"Strategy : {strategy.label()}")
     print(f"Space    : {strategy.space.names}  ({strategy.space.grid_size()} grid points)")
+    print(f"Policy   : fees={policy.fee_bps_per_side}bps + slip={policy.slippage_bps_per_side}bps "
+          f"/side, fill={policy.fill}, short={policy.allow_short}")
+    print(f"Run      : method={config.method}, objective={config.objective_metric} "
+          f"({config.objective_direction}), constraints={list(config.constraints)}")
 
-    # One call runs: sweep -> backtest each -> rank -> deflate -> PBO.
-    report = evaluate(
-        strategy,
-        objective=Objective.maximize("sharpe"),
-        method="grid",
-        constraints=["fast < slow"],
-        pbo_folds=8,
-    )
+    # One call runs: sweep -> backtest each (under the policy) -> rank -> deflate -> PBO.
+    report = evaluate(strategy, config=config)
 
     best = report.best
     print(f"\nBest by in-sample Sharpe: {best.candidate.params}  "

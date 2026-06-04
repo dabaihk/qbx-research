@@ -29,6 +29,8 @@ yourself.
 """
 from __future__ import annotations
 
+from .backtest import BacktestPolicy, BacktestResult, simulate
+from .config import RunConfig
 from .constraints import ConstraintError
 from .constraints import evaluate as eval_constraint
 from .objective import Constraint, Objective, rank, satisfies
@@ -53,6 +55,7 @@ from .selection import (
 from .space import Param, SearchSpace
 from .strategy import (
     EvaluatedCandidate,
+    SignalStrategy,
     Strategy,
     StrategyReport,
     basic_metrics,
@@ -65,10 +68,16 @@ __all__ = [
     "__version__",
     # strategy + harness
     "Strategy",
+    "SignalStrategy",
     "StrategyReport",
     "EvaluatedCandidate",
     "evaluate",
     "basic_metrics",
+    # backtest + config
+    "simulate",
+    "BacktestPolicy",
+    "BacktestResult",
+    "RunConfig",
     # search
     "Param",
     "SearchSpace",

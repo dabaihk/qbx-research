@@ -1,0 +1,11 @@
+# Backtest execution policy — the "BT policy".
+# Load with: qbx_research.BacktestPolicy.from_yaml("examples/policy.yaml")
+
+fee_bps_per_side: 1.0        # commission per side, basis points of notional
+slippage_bps_per_side: 0.5   # modelled slippage per side, basis points
+fill: next_bar               # next_bar (no look-ahead) | same_bar (optimistic)
+allow_short: false           # clip negative positions to zero when false
+max_leverage: 1.0            # positions clipped to [-max_leverage, +max_leverage]
+initial_equity: 1.0          # starting capital for the equity curve
+periods_per_year: 252        # annualisation factor for Sharpe / volatility
+annualize: true              # report annualised Sharpe & volatility

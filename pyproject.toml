@@ -36,7 +36,8 @@ classifiers = [
 dependencies = ["numpy>=1.23", "pandas>=1.5"]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0", "ruff>=0.4"]
+yaml = ["pyyaml>=6.0"]
+dev = ["pytest>=7.0", "ruff>=0.4", "pyyaml>=6.0"]
 
 [project.urls]
 Homepage = "https://github.com/dabaihk/qbx-research"

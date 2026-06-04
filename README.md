@@ -74,7 +74,12 @@ pip install qbx-research
 ```
 
 Runtime dependencies are just `numpy` and `pandas`. No SciPy — the normal
-quantile function ships as a vendored rational approximation.
+quantile function ships as a vendored rational approximation. YAML configs are
+optional:
+
+```bash
+pip install "qbx-research[yaml]"   # adds PyYAML for BacktestPolicy/RunConfig.from_yaml
+```
 
 ## The 60-second tour
 
@@ -119,6 +124,71 @@ deflate → estimate overfitting — and only ever sees the returns your `backte
 returns. A runnable version (with synthetic prices, no data needed) lives in
 [`examples/quickstart.py`](examples/quickstart.py); the demo strategy ships in
 `qbx_research.demos`.
+
+### Positions, not returns? Use `SignalStrategy` + a policy
+
+Most strategies are easier to express as *positions* than as returns. Subclass
+`SignalStrategy`, implement `positions(params)`, and let a configurable
+`BacktestPolicy` own the execution assumptions — costs, fill timing, shorting,
+leverage — while the included vectorised backtester handles the accounting:
+
+```python
+from qbx_research import SignalStrategy, BacktestPolicy, Param, SearchSpace
+
+class MACrossover(SignalStrategy):
+    def __init__(self, prices, policy=None):
+        self.prices = prices
+        self.policy = policy or BacktestPolicy(fee_bps_per_side=1.0, allow_short=False)
+
+    @property
+    def space(self):
+        return SearchSpace([Param.values_of("fast", [5, 10, 20]),
+                            Param.values_of("slow", [50, 100, 200])])
+
+    def positions(self, params):                     # +1 long, -1 short, 0 flat
+        fast = self.prices.rolling(params["fast"]).mean()
+        slow = self.prices.rolling(params["slow"]).mean()
+        pos = (fast > slow).astype(float) - (fast < slow).astype(float)
+        return pos                                   # policy clips shorts, applies costs
+```
+
+### Configuration from YAML
+
+The backtest policy and the run itself are declarative — keep them in version
+control, not in call sites:
+
+```yaml
+# policy.yaml — execution assumptions
+fee_bps_per_side: 1.0
+slippage_bps_per_side: 0.5
+fill: next_bar          # next_bar (no look-ahead) | same_bar
+allow_short: false
+max_leverage: 1.0
+periods_per_year: 252
+```
+
+```yaml
+# run.yaml — everything except the strategy
+method: grid            # grid | random | latin_hypercube
+constraints: ["fast < slow"]
+objective_metric: sharpe
+objective_direction: maximize
+metric_constraints: [["max_drawdown_pct", "<=", 0.25]]
+pbo_folds: 8
+```
+
+```python
+from qbx_research import BacktestPolicy, RunConfig, evaluate
+
+policy = BacktestPolicy.from_yaml("policy.yaml")
+config = RunConfig.from_yaml("run.yaml")
+report = evaluate(MACrossover(my_prices, policy=policy), config=config)
+```
+
+Explicit keyword arguments to `evaluate` always override the config, so YAML is
+a default, never a straitjacket. Example configs live in
+[`examples/policy.yaml`](examples/policy.yaml) and
+[`examples/run.yaml`](examples/run.yaml).
 
 ---
 
@@ -258,10 +328,21 @@ smuggle in false confidence.
 ### Strategy & harness — `qbx_research.strategy`
 
 `Strategy` is the single abstract base you implement: a `space` property and a
-`backtest(params) -> pd.Series` method. `evaluate(strategy, ...)` runs the whole
-research loop and returns a `StrategyReport` (`ranking`, `returns` matrix,
-`deflated_sharpe`, `pbo`). `qbx_research.demos` carries an illustrative
-`MovingAverageCrossover` on synthetic prices for docs and tests.
+`backtest(params) -> pd.Series` method. `SignalStrategy` is the position-based
+variant (implement `positions`; the backtester does the rest).
+`evaluate(strategy, ...)` runs the whole research loop and returns a
+`StrategyReport` (`ranking`, `returns` matrix, `deflated_sharpe`, `pbo`).
+`qbx_research.demos` carries an illustrative `MovingAverageCrossover` on
+synthetic prices for docs and tests.
+
+### Backtest & config — `qbx_research.backtest`, `qbx_research.config`
+
+`simulate(prices, positions, *, policy)` is a clean-room vectorised engine —
+next-bar/same-bar fill, per-side fees and slippage on turnover, equity curve,
+annualised Sharpe, max drawdown, turnover and trade count — returning a
+`BacktestResult`. `BacktestPolicy` (execution assumptions) and `RunConfig`
+(search method, objective, constraints, folds) are frozen dataclasses that load
+from a dict or a YAML file. Nothing here is copied from a proprietary engine.
 
 ### Search — `qbx_research.search`
 

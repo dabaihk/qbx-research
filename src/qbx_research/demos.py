@@ -15,8 +15,9 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from .backtest import BacktestPolicy
 from .space import Param, SearchSpace
-from .strategy import Strategy
+from .strategy import SignalStrategy
 
 __all__ = ["synthetic_prices", "MovingAverageCrossover"]
 
@@ -39,12 +40,14 @@ def synthetic_prices(
     return pd.Series(start * np.exp(np.cumsum(log_returns)), name="price")
 
 
-class MovingAverageCrossover(Strategy):
-    """Go long (optionally short) on a fast/slow simple-moving-average cross.
+class MovingAverageCrossover(SignalStrategy):
+    """Go long (and optionally short) on a fast/slow simple-moving-average cross.
 
     A textbook example with exactly the kind of two knobs that invite
     overfitting — perfect for showing what the Deflated Sharpe Ratio and PBO do
-    to an in-sample winner.
+    to an in-sample winner. As a :class:`~qbx_research.strategy.SignalStrategy`
+    it only defines *positions*; the configurable
+    :class:`~qbx_research.backtest.BacktestPolicy` owns costs, fill and shorting.
     """
 
     name = "moving_average_crossover"
@@ -55,7 +58,7 @@ class MovingAverageCrossover(Strategy):
         *,
         fast_windows: Sequence[int] = (5, 10, 20, 50),
         slow_windows: Sequence[int] = (20, 50, 100, 200),
-        allow_short: bool = False,
+        policy: BacktestPolicy | None = None,
         seed: int = 0,
     ) -> None:
         self.prices = (
@@ -63,9 +66,9 @@ class MovingAverageCrossover(Strategy):
             if prices is not None
             else synthetic_prices(seed=seed)
         )
+        self.policy = policy or BacktestPolicy(allow_short=False)
         self._fast = tuple(fast_windows)
         self._slow = tuple(slow_windows)
-        self._allow_short = allow_short
 
     @property
     def space(self) -> SearchSpace:
@@ -76,18 +79,10 @@ class MovingAverageCrossover(Strategy):
             ]
         )
 
-    def backtest(self, params: Mapping[str, Any]) -> pd.Series:
-        fast = int(params["fast"])
-        slow = int(params["slow"])
-        price = self.prices
-        fast_ma = price.rolling(fast).mean()
-        slow_ma = price.rolling(slow).mean()
-
-        position = pd.Series(0.0, index=price.index)
+    def positions(self, params: Mapping[str, Any]) -> pd.Series:
+        fast_ma = self.prices.rolling(int(params["fast"])).mean()
+        slow_ma = self.prices.rolling(int(params["slow"])).mean()
+        position = pd.Series(0.0, index=self.prices.index)
         position[fast_ma > slow_ma] = 1.0
-        if self._allow_short:
-            position[fast_ma < slow_ma] = -1.0
-
-        market_return = price.pct_change().fillna(0.0)
-        # Act on yesterday's signal to avoid look-ahead.
-        return (position.shift(1).fillna(0.0) * market_return).rename("return")
+        position[fast_ma < slow_ma] = -1.0  # policy clips shorts when disallowed
+        return position
