@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling>=1.18"]
+build-backend = "hatchling.build"
+
+[project]
+name = "qbx-research"
+version = "0.1.0"
+description = "Parameter sweeps and selection-aware backtest statistics (Deflated Sharpe, PBO)."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+requires-python = ">=3.10"
+authors = [{ name = "Yichong Bai", email = "yichong.bai@gmail.com" }]
+keywords = [
+    "quant",
+    "backtesting",
+    "sharpe-ratio",
+    "deflated-sharpe-ratio",
+    "overfitting",
+    "hyperparameter-search",
+    "finance",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Typing :: Typed",
+]
+dependencies = ["numpy>=1.23", "pandas>=1.5"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "ruff>=0.4"]
+
+[project.urls]
+Homepage = "https://github.com/dabaihk/qbx-research"
+Source = "https://github.com/dabaihk/qbx-research"
+Issues = "https://github.com/dabaihk/qbx-research/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/qbx_research"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
